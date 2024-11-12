@@ -5,3 +5,5 @@ seaborn
 scikit-learn
 statsmodels
 pytest
+pmdarima
+scipy
