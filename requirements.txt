@@ -8,4 +8,4 @@ scikit-learn
 statsmodels
 Cython
 pytest
-pmdarima
+pmdarima == 2.0.4 
