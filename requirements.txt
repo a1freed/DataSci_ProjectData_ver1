@@ -9,3 +9,4 @@ statsmodels>=0.11
 Cython
 pytest
 pmdarima == 2.0.4 
+kagglehub
