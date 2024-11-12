@@ -301,5 +301,3 @@ plt.show()
 
 # Print future predictions if needed
 print(f"Future Predictions for the next 5 years:\n{future_predictions}")
-
-!streamlit run DataSci_ProjectData_ver1.py & npx localtunnel --port 8501
