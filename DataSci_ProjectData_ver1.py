@@ -1,12 +1,4 @@
-%%writefile DataSci_ProjectData_ver1.py
 
-!git init
-!git add DataSci_ProjectData_ver1.py
-!git commit -m "update"
-!git remote add origin https://github.com/a1freed/DataSci_ProjectData_ver1.git
-!git push -u origin master
-!pip install pmdarima
-!pip install streamlit
 
 import pandas as pd
 import numpy as np
