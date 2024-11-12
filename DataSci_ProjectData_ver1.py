@@ -10,7 +10,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.cluster import KMeans
 from statsmodels.tsa.arima.model import ARIMA
-from pmdarima import auto_arima
+from pmdarima.arima import auto_arima
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
