@@ -14,10 +14,10 @@ import numpy as np
 
 # Load data from CSV files
 csv_files = [
-    'https://raw.githubusercontent.com/a1freed/DataSci_ProjectData_ver1/main/data/challenger_match.csv',
-    'https://raw.githubusercontent.com/a1freed/DataSci_ProjectData_ver1/main/data/match_data_version1.csv',
-    'https://raw.githubusercontent.com/a1freed/DataSci_ProjectData_ver1/main/data/match_loser_data_version1.csv',
-    'https://raw.githubusercontent.com/a1freed/DataSci_ProjectData_ver1/main/data/match_winner_data_version1.csv'
+    'https://github.com/a1freed/DataSci_ProjectData_ver1/tree/aaf566404860eb35e89822291becd21e7b577fe3/data/challenger_match.csv',
+    'https://github.com/a1freed/DataSci_ProjectData_ver1/tree/aaf566404860eb35e89822291becd21e7b577fe3/data/match_data_version1.csv',
+    'https://github.com/a1freed/DataSci_ProjectData_ver1/tree/aaf566404860eb35e89822291becd21e7b577fe3/data/match_loser_data_version1.csv',
+    'https://github.com/a1freed/DataSci_ProjectData_ver1/tree/aaf566404860eb35e89822291becd21e7b577fe3/data/match_winner_data_version1.csv'
 
 ]
 
