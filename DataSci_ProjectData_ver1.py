@@ -1,303 +1,233 @@
-from google.colab import files
-uploaded = files.upload()
+#imports
+import kagglehub
+import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import shap
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.cluster import KMeans
-from statsmodels.tsa.arima.model import ARIMA
-from pmdarima.arima import auto_arima
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import mean_absolute_error
+import os
 from sklearn.preprocessing import LabelEncoder
+import altair as alt
+import seaborn as sns
+from sklearn.tree import DecisionTreeClassifier
+import numpy as np
+import json
+from sklearn.metrics import accuracy_score
+
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+from sklearn.tree import DecisionTreeRegressor
+
+
 from scipy.stats import zscore
+from pmdarima import auto_arima
 
-# Load Data
-def load_data(filepath):
-    data = pd.read_csv(filepath, encoding='ISO-8859-1')
-    print("First 5 rows of the dataset:\n", data.head())
-    print("\nDataset Info:\n", data.info())
-    print("\nMissing values:\n", data.isnull().sum())
-    return data
+from sklearn.metrics import mean_absolute_error
 
-# Preprocess Data
-def preprocess_data(data):
-    data = data.dropna(subset=['role', 'lane'])
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('role_lane', OneHotEncoder(), ['role', 'lane'])
-        ],
-        remainder='passthrough'
-    )
-    X = data[['role', 'lane']]
-    y = data['season']
-    return preprocessor, X, y
+#Files
+csv_files = [
+    '/data/challenger_match.csv',
+    '/data/match_data_version1.csv',
+    '/data/match_loser_data_version1.csv',
+    '/data/match_winner_data_version1.csv'
+]
 
-# Train the Model
-def train_model(preprocessor, X, y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('regressor', LinearRegression())
-    ])
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    mse = mean_squared_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
-    print("Model Evaluation:")
-    print("Mean Squared Error (MSE):", mse)
-    print("R-squared (R²):", r2)
-    return model, X_test, y_test, y_pred
+dataframes = [pd.read_csv(file) for file in csv_files]
 
-# Plot Actual vs Predicted Values
-def plot_results(y_test, y_pred):
-    plt.figure(figsize=(10, 6))
-    plt.scatter(y_test, y_pred, color='blue')
-    plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], color='red', linewidth=2)
-    plt.xlabel("Actual Season")
-    plt.ylabel("Predicted Season")
-    plt.title("Actual vs Predicted Season")
-    plt.grid(True)
-    plt.show()
+st.title("League of Legends Match Data")
+for i, df in enumerate(dataframes):
+    st.write(f"Data # {i + 1}:")
+    st.dataframe(df)
+    st.markdown("\n")
 
-# Main Execution
-data = load_data('/content/challenger_match.csv')
-preprocessor, X, y = preprocess_data(data)
-model, X_test, y_test, y_pred = train_model(preprocessor, X, y)
-plot_results(y_test, y_pred)
+challenger_df = pd.read_csv('/data/challenger_match.csv')
 
-# Count the frequency of each role
-role_counts = data['role'].value_counts()
-top_roles = role_counts.head(10)
-print("Top 10 Roles by Frequency:\n", top_roles)
+match_data_df = pd.read_csv('/data/match_data_version1.csv')
 
-plt.figure(figsize=(10, 6))
-sns.countplot(y='role', data=data, order=data['role'].value_counts().index)
-plt.title('Top 10 Roles by Frequency in League of Legends (Challenger Dataset)')
-plt.xlabel('Count')
-plt.ylabel('Role')
-plt.show()
+st.title("League of Legends Match Data Analysis")
 
-# Encode 'role' and 'lane' to numerical values
-label_encoder = LabelEncoder()
-data['role_encoded'] = label_encoder.fit_transform(data['role'])
-data['lane_encoded'] = label_encoder.fit_transform(data['lane'])
+st.subheader("Challenger Match Data")
+st.write("### First Few Rows:")
+st.dataframe(challenger_df.head())
+st.write("### Basic Info:")
+st.text(challenger_df.info())
 
-# Extract important variables
-features = data[['season', 'role_encoded', 'lane_encoded']]
-target = data['gameId']
+st.subheader("Match Data Version 1")
+st.write("### First Few Rows:")
+st.dataframe(match_data_df.head())
+st.write("### Basic Info:")
+st.text(match_data_df.info())
 
-# Drop rows with missing values
-features = features.dropna()
-target = target.loc[features.index]
+match_winner_data = pd.read_csv('/data/match_winner_data_version1.csv')
+match_loser_data = pd.read_csv('/data/match_loser_data_version1.csv')
 
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=0)
+st.title("Match Winner and Loser Data Analysis")
 
-# Train Decision Tree Regressor model
-model = DecisionTreeRegressor(random_state=0)
-model.fit(X_train, y_train)
+st.subheader("Match Winner Data")
+st.write("### First Few Rows:")
+st.dataframe(match_winner_data.head())
 
-# Get feature importances
-importance = model.feature_importances_
-feature_importance = pd.Series(importance, index=features.columns)
-print("Feature Importances:\n", feature_importance.sort_values(ascending=False))
+st.subheader("Match Loser Data")
+st.write("### First Few Rows:")
+st.dataframe(match_loser_data.head())
 
-# Detect outliers
-numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
-z_scores = data[numeric_cols]. apply(zscore)
-outliers = (z_scores.abs() > 3).any(axis=1)
-print("Outliers Detected (Rows):")
-display(data[outliers])
+challenger_df = pd.read_csv('/data/challenger_match.csv')
 
-# Time Series Analysis
-data_counts = data[['season', 'role_encoded']].dropna().sort_values('season')
-data_counts.set_index('season', inplace=True)
-print(data_counts.describe())
+missing_values = challenger_df.isnull().sum()
+st.write("Missing values per column:")
+st.write(missing_values)
 
-# Fit ARIMA model for 'role_encoded'
-arima_model = ARIMA(data_counts['role_encoded'], order=(1, 1, 1))
-arima_model_fit = arima_model.fit()
+descriptive_stats = challenger_df.describe()
+st.write("Descriptive statistics for numerical columns:")
+st.write(descriptive_stats)
 
-# Forecast for the next 5 seasons
-forecast_seasons = 5
-forecast_dates = pd.date_range(start=data_counts.index[-1], periods=forecast_seasons + 1, freq='A')[1:]
-arima_forecast = arima_model_fit.forecast(steps=forecast_seasons)
+numerical_features = challenger_df.select_dtypes(include=['number']).columns
+numerical_df = challenger_df[numerical_features]
 
-# Plotting the forecast
-plt.figure(figsize=(10, 6))
-plt.plot(data_counts.index, data_counts['role_encoded'], label='Historical Role Encoded Data', color='blue')
-plt.plot(forecast_dates, arima_forecast, label='ARIMA Forecast', color='orange')
-plt.title("Role Encoded Forecast by Season")
-plt.xlabel("Season")
-plt.ylabel("Role Encoded Value")
-plt.legend()
-plt.show()
+plt.figure(figsize=(10, 8))
+sns.heatmap(numerical_df.corr(), annot=True, cmap="coolwarm")
+plt.title("Feature Correlations")
+st.pyplot(plt)
 
-# Visualize the distribution of 'role_encoded' across the different seasons
-plt.figure(figsize=(10, 6))
-sns.countplot(data=data_counts.reset_index(), x='season', hue='role_encoded')
-plt.title('Role Distribution Across Seasons')
+challenger_df = pd.read_csv('/data/challenger_match.csv')
+
+sns.countplot(data=challenger_df, x='role')
+plt.xlabel('Role')
+plt.ylabel('Count')
+plt.title('Distribution of Roles')
+st.pyplot(plt)
+
+sns.countplot(data=challenger_df, x='lane')
+plt.xlabel('Lane')
+plt.ylabel('Count')
+plt.title('Distribution of Lanes')
+st.pyplot(plt)
+
+sns.countplot(data=challenger_df, x='season')
 plt.xlabel('Season')
-plt.ylabel('Count of Roles')
-plt.show()
+plt.ylabel('Count')
+plt.title('Games per Season')
+st.pyplot(plt)
 
-# Residuals
-residuals = arima_model_fit.resid
+st.write("Unique game IDs: {}".format(challenger_df['gameId'].nunique()))
+st.write("Unique account IDs: {}".format(challenger_df['accountId'].nunique()))
+
+duplicates = challenger_df.duplicated().sum()
+st.write(f"Number of duplicate rows: {duplicates}")
+
+role_lane_counts = challenger_df.groupby(['lane', 'role']).size().unstack()
+role_lane_counts.plot(kind='bar', stacked=True)
+plt.xlabel('Lane')
+plt.ylabel('Count')
+plt.title('Role Frequency by Lane')
+plt.legend(title='Role')
+st.pyplot(plt)
+
+challenger_df = pd.read_csv(file_path)
+
+st.write(challenger_df.head())
+
+st.write("Duplicated rows:", challenger_df.duplicated().sum())
+st.write("DataFrame Info:")
+st.write(challenger_df.info())
+st.write("Missing values per column:")
+st.write(challenger_df.isnull().sum())
+
+challenger_df = challenger_df.dropna()
+st.write(challenger_df.head())
+st.write(challenger_df.info())
+
+st.write("Unique Roles:", challenger_df['role'].unique())
+st.write("Unique Lanes:", challenger_df['lane'].unique())
+st.write("Unique Seasons:", challenger_df['season'].unique())
+
+st.write("Columns in challenger_df:", challenger_df.columns)
+st.write("Data Types:\n", challenger_df.dtypes)
+
+challenger_df['gameDuration'] = pd.to_numeric(challenger_df['gameDuration'], errors='coerce')
+duration_counts = challenger_df['gameDuration'].value_counts()
+st.write("Game Duration Counts:\n", duration_counts)
+
+highest_duration_row = challenger_df.loc[challenger_df['gameDuration'].idxmax()]
+st.write("Match with the highest duration:")
+st.write(highest_duration_row)
+
 plt.figure(figsize=(10, 6))
-plt.plot(residuals)
-plt.title('Residuals of ARIMA Model')
-plt.show()
+plt.bar(duration_counts.index, duration_counts.values, color='blue', alpha=0.7, edgecolor='darkorange')
+plt.title('Frequency Distribution of Game Duration')
+plt.xlabel('Game Duration (in seconds)')
+plt.ylabel('Frequency')
+plt.xticks(rotation=45)
+plt.grid(axis='y')
+st.pyplot(plt)
 
-# Check residuals summary
-print(residuals.describe())
-sns.histplot(residuals, kde=True)
-plt.title('Distribution of Residuals')
-plt.show()
+unique_game_modes = challenger_df['gameMode'].unique()
+st.write("Unique Game Modes:", unique_game_modes)
 
-# Find the best ARIMA model automatically
-auto_model = auto_arima(data_counts['role_encoded'], seasonal=True, m=1, stepwise=True, trace=True)
-auto_model_fit = auto_model.fit(data_counts['role_encoded'])
-arima_forecast_auto = auto_model_fit.predict(n_periods=forecast_seasons)
+game_duration_counts = challenger_df['gameDuration'].value_counts()
+st.write("Game Duration Counts:\n", game_duration_counts)
 
-# Evaluate the model
-test_data = data_counts.tail(5)
-mae = mean_absolute_error(test_data['role_encoded'], arima_forecast[:len(test_data)])
-print(f'Mean Absolute Error: {mae}')
+challenger_df['gameDuration_Rounded'] = challenger_df['gameDuration'].round()
+st.write("Rounded Game Durations:\n", challenger_df['gameDuration_Rounded'])
 
-# Get forecast with confidence intervals
-forecast_values = arima_model_fit.get_forecast(steps=forecast_seasons)
-forecast_mean = forecast_values.predicted_mean
-forecast_ci = forecast_values.conf_int()
+unique_game_durations = challenger_df['gameDuration_Rounded'].unique()
+st.write("Unique Rounded Game Durations:", unique_game_durations)
 
-# Plot forecast with confidence intervals
-plt.figure(figsize=(10, 6))
-plt.plot(data_counts.index, data_counts['role_encoded'], label='Historical Role Encoded Data', color='blue')
-plt.plot(forecast_dates, forecast_mean, label='ARIMA Forecast', color='orange')
-plt.fill_between(forecast_dates, forecast_ci['lower role_encoded'], forecast_ci['upper role_encoded'], color='orange', alpha=0.3)
-plt.title("Role Encoded Forecast by Season with Confidence Intervals")
-plt.xlabel("Season")
-plt.ylabel("Role Encoded Value")
-plt.legend()
-plt.show()
+feature_columns = ['firstBlood', 'firstTower', 'firstInhibitor', 'firstBaron',
+                   'firstDragon', 'firstRiftHerald', 'towerKills',
+                   'inhibitorKills', 'baronKills', 'dragonKills']
 
-# Check if seasonality exists in the data
-plt.figure(figsize=(10, 6))
-sns.boxplot(x='season', y='role_encoded', data=data_counts.reset_index())
-plt.title('Role Encoded Distribution Across Seasons')
-plt.xlabel('Season')
-plt.ylabel('Role Encoded')
-plt.show()
+feature_counts = challenger_df[feature_columns].sum()
+custom_colors = ['darkseagreen', 'hotpink', 'mediumvioletred', 'palevioletred',
+                 'pink', 'lightpink', 'darkseagreen', 'orchid', 'lightcoral', 'lightblue']
 
-# Fit SARIMA model
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-sarima_model = SARIMAX(data_counts['role_encoded'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-sarima_model_fit = sarima_model.fit()
+plt.figure(figsize=(12, 8))
+plt.bar(feature_counts.index, feature_counts.values, color=custom_colors[:len(feature_counts)])
+plt.title('Frequency Distribution of Key Game Events')
+plt.xlabel('Game Events')
+plt.ylabel('Frequency of Occurrence')
+plt.xticks(rotation=45)
+st.pyplot(plt)
 
-# Forecast with SARIMA
-sarima_forecast = sarima_model_fit.forecast(steps=forecast_seasons)
+columns_to_check = ['win', 'firstBlood', 'firstTower', 'firstInhibitor',
+                    'firstBaron', 'firstDragon', 'firstRiftHerald',
+                    'towerKills', 'inhibitorKills', 'baronKills', 'dragonKills']
 
-# Clustering
-scaler = StandardScaler()
-scaled_data = scaler.fit_transform(data_counts[['season', 'role_encoded']])
-kmeans = KMeans(n_clusters=3, random_state=42)
-data_counts['Cluster'] = kmeans.fit_predict(scaled_data)
+for column in columns_to_check:
+    st.write(f"Winner dataset - {column} unique values:\n", challenger_df[column].unique())
 
-# Plotting the clusters
-plt.figure(figsize=(10, 6))
-plt.scatter(data_counts['season'], data_counts['role_encoded'], c=data_counts['Cluster'], cmap='viridis', alpha=0.6)
-plt.title('Clustering: Role Encoded vs Season')
-plt.xlabel('Season')
-plt.ylabel('Role Encoded Value')
-plt.colorbar(label='Cluster')
-plt.show()
+for column in columns_to_check:
+    st.write(f"Loser dataset - {column} unique values:\n", challenger_df[column].unique())
 
-# Elbow method to determine the best number of clusters
-inertia = []
-for k in range (1, 11):
-    kmeans = KMeans(n_clusters=k, random_state=42)
-    kmeans.fit(scaled_data)
-    inertia.append(kmeans.inertia_)
+challenger_df[columns_to_check] = challenger_df[columns_to_check].astype(int)
 
-plt.plot(range(1, 11), inertia, marker='o')
-plt.title('Elbow Method for Optimal Number of Clusters')
-plt.xlabel('Number of Clusters')
-plt.ylabel('Inertia')
-plt.show()
+winner_event_counts = challenger_df[columns_to_check].sum()
+loser_event_counts = challenger_df[columns_to_check].sum()
 
-# Example: Plotting the number of games by lane per season
-lane_counts = data.groupby(['season', 'lane']).size().unstack()
-lane_counts.plot(kind='line', figsize=(12, 6), marker='o')
-plt.title("Number of Games by Lane Over Time")
-plt.xlabel("Season")
-plt.ylabel("Number of Games")
-plt.grid(True)
-plt.show()
+st.write("Winner event counts:\n", winner_event_counts)
+st.write("Loser event counts:\n", loser_event_counts)
 
-# Compute a 5-season rolling average
-data_counts = data.groupby(['season']).size()
-data_counts_rolling_avg = data_counts.rolling(window=5).mean()
+plt.figure(figsize=(12, 8))
 
-# Plotting the number of games with a 5-season rolling average
-plt.figure(figsize=(12, 6))
-plt.plot(data_counts.index, data_counts, label="Number of Games", color='blue', marker='o', linestyle='-')
-plt.plot(data_counts_rolling_avg.index, data_counts_rolling_avg, label="5-Season Rolling Average", color='orange', linestyle='--')
-plt.title("Games Played Per Season with 5-Season Rolling Average")
-plt.xlabel("Season")
-plt.ylabel("Number of Games")
-plt.legend()
-plt.grid(True)
-plt.show()
+plt.subplot(1, 2, 1)
+plt.bar(winner_event_counts.index, winner_event_counts .values, color='green')
+plt.title('Frequency Distribution of Key Game Events (Winners)')
+plt.xlabel('Game Events')
+plt.ylabel('Frequency')
+plt.xticks(rotation=45)
 
-# Prepare the data for linear regression
-X = data[['season']]
-y = data['gameId']  # Replace 'gameId' with the target you're predicting
+plt.subplot(1, 2, 2)
+plt.bar(loser_event_counts.index, loser_event_counts.values, color='red')
+plt.title('Frequency Distribution of Key Game Events (Losers)')
+plt.xlabel('Game Events')
+plt.ylabel('Frequency')
+plt.xticks(rotation=45)
 
-# Split the data into train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+plt.tight_layout()
+st.pyplot(plt)
 
-# Initialize and fit the linear regression model
-model = LinearRegression()
-model.fit(X_train, y_train)
-
-# Make predictions on the test set
-y_pred = model.predict(X_test)
-
-# Plot the results
-plt.figure(figsize=(10, 6))
-plt.plot(data['season'], data['gameId'], label='Actual Data', color='blue')
-plt.plot(X_test, y_pred, label='Predicted Data (Linear Regression)', color='orange', linestyle='--')
-plt.title("Game Data: Actual vs. Predicted (Linear Regression)")
-plt.xlabel("Season")
-plt.ylabel("Game Data")
-plt.legend()
-plt.grid(True)
-plt.show()
-
-# Evaluate the model using Mean Squared Error (MSE)
-mse = mean_squared_error(y_test, y_pred)
-print(f'Mean Squared Error: {mse}')
-
-# Forecast for the next 5 years
-future_years = pd.DataFrame({'season': np.arange(data['season'].max() + 1, data['season'].max() + 6)})
-future_predictions = model.predict(future_years)
-
-# Plot the historical data and the future forecast
-plt.figure(figsize=(10, 6))
-plt.plot(data['season'], data['gameId'], label='Historical Data', color='blue')
-plt.plot(future_years, future_predictions, label='Future Forecast', color='red', linestyle='--')
-plt.title("Game Data Forecast with Linear Regression")
-plt.xlabel("Season")
-plt.ylabel("Game Data")
-plt.legend()
-plt.grid(True)
-plt.show()
-
-# Print future predictions if needed
-print(f"Future Predictions for the next 5 years:\n{future_predictions}")
