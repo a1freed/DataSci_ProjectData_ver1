@@ -1,11 +1,11 @@
 streamlit
-pandas
-numpy
-scipy
+pandas>=0.19
+numpy>=1.17.3
+scipy>=1.3.2
 matplotlib
 seaborn
-scikit-learn
-statsmodels
+scikit-learn>=0.22
+statsmodels>=0.11
 Cython
 pytest
 pmdarima == 2.0.4 
