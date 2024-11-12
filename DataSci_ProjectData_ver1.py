@@ -31,10 +31,10 @@ from sklearn.metrics import mean_absolute_error
 
 #Files
 csv_files = [
-    '/data/challenger_match.csv',
-    '/data/match_data_version1.csv',
-    '/data/match_loser_data_version1.csv',
-    '/data/match_winner_data_version1.csv'
+    'https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/challenger_match.csv',
+    'https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/match_data_version1.csv',
+    'https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/match_loser_data_version1.csv',
+    'https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/match_winner_data_version1.csv'
 ]
 
 dataframes = [pd.read_csv(file) for file in csv_files]
@@ -45,9 +45,9 @@ for i, df in enumerate(dataframes):
     st.dataframe(df)
     st.markdown("\n")
 
-challenger_df = pd.read_csv('/data/challenger_match.csv')
+challenger_df = pd.read_csv('https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/challenger_match.csv')
 
-match_data_df = pd.read_csv('/data/match_data_version1.csv')
+match_data_df = pd.read_csv('https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/match_data_version1.csv')
 
 st.title("League of Legends Match Data Analysis")
 
@@ -63,8 +63,8 @@ st.dataframe(match_data_df.head())
 st.write("### Basic Info:")
 st.text(match_data_df.info())
 
-match_winner_data = pd.read_csv('/data/match_winner_data_version1.csv')
-match_loser_data = pd.read_csv('/data/match_loser_data_version1.csv')
+match_winner_data = pd.read_csv('https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/match_winner_data_version1.csv')
+match_loser_data = pd.read_csv('https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/match_loser_data_version1.csv')
 
 st.title("Match Winner and Loser Data Analysis")
 
@@ -76,7 +76,7 @@ st.subheader("Match Loser Data")
 st.write("### First Few Rows:")
 st.dataframe(match_loser_data.head())
 
-challenger_df = pd.read_csv('/data/challenger_match.csv')
+challenger_df = pd.read_csv('https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/challenger_match.csv')
 
 missing_values = challenger_df.isnull().sum()
 st.write("Missing values per column:")
@@ -94,7 +94,7 @@ sns.heatmap(numerical_df.corr(), annot=True, cmap="coolwarm")
 plt.title("Feature Correlations")
 st.pyplot(plt)
 
-challenger_df = pd.read_csv('/data/challenger_match.csv')
+challenger_df = pd.read_csv('https://github.com/a1freed/DataSci_ProjectData_ver1/blob/83da999e2c98a1a3bec3ca78a09e99073cdb885d/data/challenger_match.csv')
 
 sns.countplot(data=challenger_df, x='role')
 plt.xlabel('Role')
