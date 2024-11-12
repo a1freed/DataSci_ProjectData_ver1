@@ -5,7 +5,7 @@ seaborn
 scikit-learn
 statsmodels
 pytest
-numpy
-pmdarima
+numpy==1.21.6 
+pmdarima==1.8.4
 scipy
 Cython
